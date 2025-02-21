@@ -1,2 +1,1 @@
 "# Interior_RudykhKO" 
-hi
