@@ -1,0 +1,108 @@
+:root {
+    --color-black: #212121;
+    --color-white: #ffffff;
+    --color-grey-dark: #747474;
+    --color-grey-light: #D9D9D9;
+    --color-yellow: #f7e519;
+    --color-yellow-dark: #f7d219;
+    --color-blue: #498193;
+    --color-blue-light: #84BACB;
+    --color-background: #ffffff;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Montserrat", sans-serif;
+    background-color: var(--color-background);
+    color: var(--color-black);
+    font-weight: 400;
+    font-style: normal;
+    margin: 21px;
+}
+
+header {
+
+}
+
+main {
+
+}
+
+h1 {
+    font-size: 40px;    
+    font-weight: 400;
+}
+
+h2 {
+    font-size: 30px;
+    font-weight: 400;
+}
+
+h3 {
+    font-size: 24px;
+    font-weight: 400;
+}
+
+p {
+    font-size: 16px;
+    font-weight: 400;
+}
+
+.greeting, #styles_header, #tips_header {
+    text-align: center;
+}
+
+a {
+    text-decoration: none;
+    color: var(--color-blue) !important;
+    font-weight: 500;
+}
+
+img {
+    width: 50%;
+}
+
+ul {
+    margin: 7px 35px;
+    list-style-type: disc;
+}
+
+ol {
+    margin: 7px 35px;
+    list-style-type: decimal;
+}
+
+table.decor-ideas {
+    border-collapse: collapse;
+}
+
+table.decor-ideas th {
+    background-color: var(--color-blue-light);
+    padding: 10px;
+    border: 2px solid var(--color-blue);
+}    
+
+table.decor-ideas td {
+    padding: 10px;    
+    border: 2px solid var(--color-blue);
+}
+
+table.decor-ideas img {
+    width: 100%;
+}
+
+dl dt {
+    color: var(--color-blue);
+    font-weight: 600;
+}
+
+dl dd {
+    margin: 10px;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-style: italic;
+}
