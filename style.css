@@ -25,14 +25,6 @@ body {
     margin: 21px;
 }
 
-header {
-
-}
-
-main {
-
-}
-
 h1 {
     font-size: 40px;    
     font-weight: 400;
@@ -59,7 +51,7 @@ p {
 
 a {
     text-decoration: none;
-    color: var(--color-blue) !important;
+    color: var(--color-blue);
     font-weight: 500;
 }
 
@@ -96,6 +88,22 @@ table.decor-ideas img {
     width: 100%;
 }
 
+
+
+p + ul {
+    color: red;
+}
+
+nav a {
+    color: blue;
+    font-size: 15px;    
+    font-weight: 600;
+}
+
+nav a:hover {
+    color: cadetblue;
+}
+
 dl dt {
     color: var(--color-blue);
     font-weight: 600;
@@ -105,4 +113,12 @@ dl dd {
     margin: 10px;
     font-family: Georgia, 'Times New Roman', serif;
     font-style: italic;
+}
+
+main p {
+    font-style: italic;
+}
+
+.intro > p {
+    color:indigo;   
 }
