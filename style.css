@@ -161,22 +161,6 @@ table.decor-ideas img {
     width: 100%;
 }
 
-
-
-p + ul {
-    color: red;
-}
-
-nav a {
-    color: blue;
-    font-size: 15px;    
-    font-weight: 600;
-}
-
-nav a:hover {
-    color: cadetblue;
-}
-
 dl dt {
     color: var(--color-accent);
     font-weight: 600;
