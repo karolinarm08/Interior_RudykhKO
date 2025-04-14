@@ -36,6 +36,11 @@ body {
     font-style: normal;
 }
 
+.body {
+    min-height: 100vh;  height: 100%;
+
+}
+
 header {
     background-color: var(--color-background-accent);
     width: 100%;
@@ -234,7 +239,7 @@ dl dd {
 }
 
 .style-photo {
-    width: 50%;
+    width: 60%;
 }
 
 .style-photo {
@@ -435,7 +440,7 @@ p+p {
     width: 10%;
 }
 
-.proem span {
+.proem .home-item {
     display: block;
     column-count: 2;
     column-gap: var(--spacing-84);
@@ -529,49 +534,3 @@ footer {
     font-weight: 500;
     margin-top: var(--spacing-21);
 }
-
-/** **/
-
-.intro-logo {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    text-align: center;
-    width: 10%;
-}
-
-.style-photo {
-    margin-left: var(--spacing-42);
-    float: right;
-    clear: both;
-}
-
-a:link {
-    color: var(--color-accent-light);
-}
-
-a:visited {
-    color: var(--color-beige-light);
-}
-
-a:active {
-    color: var(--color-beige-middle);
-}
-
-a:hover {
-    color: var(--color-beige-dark);
-}
-
-li:first-child {
-    color: crimson;
-}
-
-.home-item h2::after {
-    content: "...";
-}
-
-.home-item h2::before {
-    content: "▪";
-}
-
-/** **/
