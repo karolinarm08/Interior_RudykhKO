@@ -28,7 +28,7 @@
     </header>
     <main class="home-main">
         <section class="home-intro">
-            <img class="intro-back" src="./images/Frame 2.png" alt="">
+            <img id="intro_back" class="intro-back" src="./images/Frame 2.png" alt="">
             <h1 class="greeting">Ласкаво просимо до <br>світу стильного інтер'єру!</h1>
             <img class="intro-logo" src="./images/logo00.png" alt="">
             <p>Наш сайт – це джерело натхнення для створення
@@ -297,6 +297,27 @@
                 </div>
             </div>
         </section>
+        <div class="idea" onclick="idea(this)">
+            <p>Натисніть тут, щоб отримати ідею оформлення!</p>
+        </div>
+        <style>
+            .idea {
+                position: absolute;
+                top: 100px;
+                left: 50px;
+                width: 200px;
+                height: 100px;
+                background-color: yellow;
+                border-radius: 100%;
+                display: flex;
+                align-items: center;
+                padding: 10px;
+                p {
+                    text-align: center;
+                    font-size: 15px;
+                }
+            }
+        </style>
     </main>
     <footer>
         <div class="footer-main">
@@ -314,47 +335,14 @@
         </div>
     </footer>
 </body>
-<script src="dialog.js"></script>
 <script>
-    alert("Ласкаво просимо до світу стильного інтер'єру!");
-
-    let name = prompt("Як вас звати?", "");
-    if (name) {
-        alert("Приємно познайомитись, " + name + "!");
+    function idea(el) {
+        el.innerHTML = "<p>Комбінуйте текстури: дерево, тканини, камінь — це додає глибини інтер'єру.<p>";
     }
 
-    let confirmVisit = confirm("Ви вперше на цій сторінці?");
-    if (confirmVisit) {
-        alert("Раді вітати вас!");
-    } else {
-        alert("Раді бачити вас знову!");
-    }
-
-    dialogWithUser();
-
-    function showDeveloperInfo(surname, name, position = "IT-спеціаліст") {
-        alert(`Автор: ${surname} ${name} (${position})`);
-    }
-    showDeveloperInfo("Рудих", "Кароліна", "Web-розробник");
-
-    function compareStrings() {
-        const style1 = prompt("Введіть перший стиль інтер’єру:");
-        const style2 = prompt("Введіть другий стиль інтер’єру:");
-
-        if (style1 && style2) {
-            if (style1.toLowerCase() < style2.toLowerCase()) {
-                alert(`Рекомендуємо почати з ${style1}, а потім звернути увагу на ${style2}.`);
-            } else if (style1.toLowerCase() > style2.toLowerCase()) {
-                alert(`Рекомендуємо почати з ${style2}, а потім звернути увагу на ${style1}.`);
-            } else {
-            alert("Ви ввели однакові стилі.");
-            }
-        } else {
-            alert("Будь ласка, введіть обидва стилі.");
-        }
-    }
-    compareStrings();
-
+    intro_back.onclick = function () {
+        location.href = "/styles.html";
+    };
 </script>
 
 </html>

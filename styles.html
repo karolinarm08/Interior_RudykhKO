@@ -43,8 +43,54 @@
         </section>
 
         <section class="style-list">
-            <div id="info">Вітаємо на сайті про інтер’єр!</div>
-            <div id="tip"></div>
+            <div class="w-container style-descr">
+                <h2>Коротка навігація</h2>
+                <div id="style-buttons">
+                    <button data-style="loft">Лофт</button>
+                    <button data-style="minimalism">Мінімалізм</button>
+                    <button data-style="scandinavian">Скандинавський стиль</button>
+                    <button data-style="classical">Класичний стиль</button>
+                    <button data-style="hitech">Хай-тек</button>                    
+                </div>
+                <div id="style-info" class="style-info">
+                    <h3>Оберіть стиль інтер'єру, щоб побачити коротку інформацію!</h3>
+                </div>    
+                <style>
+                    #style-buttons {
+                      display: flex;
+                      justify-content: start;
+                      gap: 20px;
+                      margin: 20px 0;
+                    }
+                  
+                    #style-buttons button {
+                      padding: 10px 20px;
+                      font-size: 16px;
+                      font-weight: bold;
+                      background-color: #567c8d; 
+                      color: #fff; 
+                      border: none;
+                      border-radius: 5px;
+                      cursor: pointer;
+                      transition: background-color 0.3s, transform 0.3s; 
+                    }
+                  
+                    #style-buttons button:hover {
+                      background-color: #2f4156; 
+                      transform: translateY(-3px); 
+                    }
+                  
+                    #style-buttons button:active {
+                      background-color: #567c8d;
+                      transform: translateY(1px); 
+                    }
+                  
+                  </style>         
+            </div>
+            
+        </section>
+
+        <section class="style-list">
             <div class="style-item w-container">
                 <div class="style-descr">
                     <h2><span class="style-name">Лофт</span>: стиль для сміливих рішень</h2>
@@ -59,7 +105,7 @@
                         <br><br>
                         Особливості стилю:
                     </p>
-                    <ul>
+                    <ul id="list_highlight">
                         <li>Відкритий простір без перегородок</li>
                         <li>Експозиція інженерних деталей (труби, балки)</li>
                         <li>Мінімум декору, акцент на текстури та кольори</li>
@@ -261,72 +307,63 @@
     </footer>
 </body>
 <script>
-    document.body.style.background = "#c8d9e6";
-    setTimeout(() => { 
-      document.body.style.background = "";
-    }, 30000);
+    const list = document.getElementById('list_highlight');
 
-    if (confirm("Перейти ло головної сторінки?")) {
-    location.href = "/index.html";
+    list.onclick = function (event) {
+        let target = event.target;
+
+        if (!target) return;
+
+        const allItems = list.querySelectorAll('li');
+        allItems.forEach(item => {
+            item.style.textShadow = '';
+        });
+
+        target.style.textShadow = "0px 0px 10px aqua";
     };
 
-    let tip = document.getElementById("tip");
-    tip.innerHTML = "Натисніть на фото, щоб побачити його в повному розмірі";
+    /////////////////////////
 
-    let styleBlocks = document.querySelectorAll(".style-descr h2");
-    styleBlocks.forEach(el => {
-      el.style.border = "3px solid var(--color-accent)";
-      el.style.padding = "10px";
-    });
+    const styleData = {
+        loft: {
+            name: "Лофт",
+            description: "Лофт — це стиль, який поєднує індустріальні елементи з комфортом житлових приміщень. Це відкриті простори, грубі матеріали та мінімалістичний підхід."
+        },
+        minimalism: {
+            name: "Мінімалізм",
+            description: "Мінімалізм — це стиль, який характеризується простотою та відсутністю зайвих деталей. Це гармонія в простоті."
+        },
+        scandinavian: {
+            name: "Скандинавський стиль",
+            description: "Скандинавський стиль поєднує природні матеріали, світлі кольори та простоту. Це затишок і функціональність в одному."
+        },
+        classical: {
+            name: "Класичний стиль",
+            description: "Класичний стиль відомий своєю елегантністю, симетрією і розкішними елементами. Він підходить для тих, хто любить традиційний декор."
+        },
+        hitech: {
+            name: "Хай-тек",
+            description: "Хай-тек — це стиль, що базується на використанні сучасних матеріалів та технологій. Це мінімалістичні форми та функціональність."
+        }
+    };
 
-    const info = document.getElementById("info");
 
-    info.innerHTML += "<p><strong>Обирайте стиль, що вам до душі.</strong></p>";
+    function showStyleInfo(event) {
+        const styleKey = event.target.getAttribute('data-style'); 
+        const style = styleData[styleKey];
 
-    //info.outerHTML = "<section id='info'>Нова секція. Скоро!</section>";
+        const styleInfoDiv = document.getElementById('style-info');
 
-    const textNode = info.firstChild;
-    console.log(textNode.nodeValue); // або textNode.data
-
-    console.log(info.textContent);
-
-    document.write("<p style='color: gray'>Сторінка про стилі інтер’єру завантажена.</p>");
-
-    function addNewStyle() {
-        const container = document.createElement("div");
-        container.className = "style-item w-container";
-
-        const descr = document.createElement("div");
-        descr.className = "style-descr";
-
-        const h2 = document.createElement("h2");
-        h2.textContent = "Еклектика: стиль для тих, хто любить поєднувати";
-
-        const p = document.createElement("p");
-        p.textContent = "Еклектика — це сміливе поєднання стилів, фактур і кольорів.";
-
-        const p2 = document.createElement("p");
-        p2.textContent = "Такий стиль підходить для тих, хто хоче зробити свій інтер’єр неповторним.";
-
-        descr.append(h2);
-        descr.append(p);
-        descr.append(p2);
-        container.append(descr);
-
-        document.querySelector(".style-list").append(container);
-
-        const label = document.createTextNode("Нове!!!");
-        descr.prepend(label);
-
-        const labelAfter = document.createTextNode("Пізніше будуть додані нові стилі.");
-        document.querySelector(".style-list").after(labelAfter);
-
-        const newp = document.createElement("p");
-        newp.textContent = "Це сміливий вибір для творчих і нестандартних людей.";
-        p2.replaceWith(newp);
-
-        label.remove();
+        styleInfoDiv.innerHTML = `
+        <h3>${style.name}</h3>
+        <p>${style.description}</p>
+        `;
     }
-    addNewStyle();
+
+    const buttons = document.querySelectorAll('#style-buttons button');
+    buttons.forEach(button => {
+        button.addEventListener('click', showStyleInfo);
+    });
+    
 </script>
 </html>
