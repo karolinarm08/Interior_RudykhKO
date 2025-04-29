@@ -46,48 +46,48 @@
             <div class="w-container style-descr">
                 <h2>Коротка навігація</h2>
                 <div id="style-buttons">
-                    <button data-style="loft">Лофт</button>
-                    <button data-style="minimalism">Мінімалізм</button>
-                    <button data-style="scandinavian">Скандинавський стиль</button>
-                    <button data-style="classical">Класичний стиль</button>
-                    <button data-style="hitech">Хай-тек</button>                    
+                    <button data-behavior="show-style" data-style="loft">Лофт</button>
+                    <button data-behavior="show-style" data-style="minimalism">Мінімалізм</button>
+                    <button data-behavior="show-style" data-style="scandinavian">Скандинавський</button>
+                    <button data-behavior="show-style" data-style="classical">Класичний</button>
+                    <button data-behavior="show-style" data-style="hitech">Хай-тек</button>
                 </div>
+
                 <div id="style-info" class="style-info">
                     <h3>Оберіть стиль інтер'єру, щоб побачити коротку інформацію!</h3>
-                </div>    
+                </div>
                 <style>
                     #style-buttons {
-                      display: flex;
-                      justify-content: start;
-                      gap: 20px;
-                      margin: 20px 0;
+                        display: flex;
+                        justify-content: start;
+                        gap: 20px;
+                        margin: 20px 0;
                     }
-                  
+
                     #style-buttons button {
-                      padding: 10px 20px;
-                      font-size: 16px;
-                      font-weight: bold;
-                      background-color: #567c8d; 
-                      color: #fff; 
-                      border: none;
-                      border-radius: 5px;
-                      cursor: pointer;
-                      transition: background-color 0.3s, transform 0.3s; 
+                        padding: 10px 20px;
+                        font-size: 16px;
+                        font-weight: bold;
+                        background-color: #567c8d;
+                        color: #fff;
+                        border: none;
+                        border-radius: 5px;
+                        cursor: pointer;
+                        transition: background-color 0.3s, transform 0.3s;
                     }
-                  
+
                     #style-buttons button:hover {
-                      background-color: #2f4156; 
-                      transform: translateY(-3px); 
+                        background-color: #2f4156;
+                        transform: translateY(-3px);
                     }
-                  
+
                     #style-buttons button:active {
-                      background-color: #567c8d;
-                      transform: translateY(1px); 
+                        background-color: #567c8d;
+                        transform: translateY(1px);
                     }
-                  
-                  </style>         
+                </style>
             </div>
-            
+
         </section>
 
         <section class="style-list">
@@ -347,23 +347,19 @@
         }
     };
 
+    document.addEventListener('click', function (event) {
+        if (event.target.matches('[data-behavior="show-style"]')) {
+            const styleKey = event.target.dataset.style;
+            const style = styleData[styleKey];
+            const styleInfoDiv = document.getElementById('style-info');
 
-    function showStyleInfo(event) {
-        const styleKey = event.target.getAttribute('data-style'); 
-        const style = styleData[styleKey];
-
-        const styleInfoDiv = document.getElementById('style-info');
-
-        styleInfoDiv.innerHTML = `
-        <h3>${style.name}</h3>
-        <p>${style.description}</p>
-        `;
-    }
-
-    const buttons = document.querySelectorAll('#style-buttons button');
-    buttons.forEach(button => {
-        button.addEventListener('click', showStyleInfo);
+            styleInfoDiv.innerHTML = `
+                <h3>${style.name}</h3>
+                <p>${style.description}</p>
+            `;
+        }
     });
-    
+
 </script>
+
 </html>
