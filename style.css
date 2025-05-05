@@ -534,3 +534,36 @@ footer {
     font-weight: 500;
     margin-top: var(--spacing-21);
 }
+
+#menu {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 12px;
+    padding: 20px;
+    background-color: #f5efeb;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    width: max-content;
+    margin: 40px auto;
+}
+
+#menu button {
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: #5f879a;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+#menu button:hover {
+    background-color: #455e6e;
+    transform: translateY(-8px);
+}
+
+#menu button:active {
+    transform: translateY(0);
+}

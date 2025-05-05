@@ -46,40 +46,6 @@
                 <button data-action="furniture">Меблі</button>
                 <button data-action="colourPalettes">Готові палітри кольорів</button>
             </div>
-            <style>
-                #menu {
-                    display: flex;
-                    flex-direction: row;
-                    align-items: stretch;
-                    gap: 12px;
-                    padding: 20px;
-                    background-color: #f5efeb;
-                    border-radius: 12px;
-                    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-                    width: max-content;
-                    margin: 40px auto;
-                }
-
-                #menu button {
-                    padding: 10px 20px;
-                    font-size: 16px;
-                    background-color: #5f879a;
-                    color: white;
-                    border: none;
-                    border-radius: 8px;
-                    cursor: pointer;
-                    transition: background-color 0.3s, transform 0.2s;
-                }
-
-                #menu button:hover {
-                    background-color: #455e6e;
-                    transform: translateY(-8px);
-                }
-
-                #menu button:active {
-                    transform: translateY(0);
-                }
-            </style>
         </section>
 
         <section class="tips-list">
@@ -575,26 +541,6 @@
                         href="https://havenly.com/blog/earth-tone" target="">цим посиланням</a>.</p>
             </div>
         </section>
-        <div id="tip-block">
-            Натисніть тут, щоб отримати інтер'єрну пораду!
-        </div>
-        <style>
-            #tip-block {
-                padding: 20px;
-                background: black;
-                color: aliceblue;
-                cursor: pointer;
-                margin: 20px 0;
-                position: absolute;
-                top: 100px;
-                left: 50px;
-                width: 200px;
-                height: 100px;
-                display: flex;
-                align-items: center;
-                padding: 10px;
-            }
-        </style>
     </main>
     <footer>
         <div class="footer-main">
@@ -613,60 +559,6 @@
     </footer>
 </body>
 <script>
-    const tip = document.getElementById('tip-block');
-
-    function changeText() {
-        tip.textContent = "Порада: використовуйте світлі кольори для візуального розширення простору!";
-    }
-
-    function changeBackground() {
-        tip.style.backgroundColor = "plum";
-        tip.style.color = "black";
-    }
-
-    function removeBlock() {
-        setTimeout(() => {
-            tip.remove();
-        }, 5000);
-    }
-
-    tip.addEventListener('click', changeText);
-    tip.addEventListener('click', changeBackground);
-    tip.addEventListener('click', removeBlock);
-
-    ///////////////////////////
-
-    const section = document.getElementsByClassName('color-scheme')[0];
-
-    const scrollController = {
-        handleEvent(event) {
-            switch (event.type) {
-                case 'mousedown':
-                    window.scrollBy(0, 100);
-                    break;
-                case 'mouseup':
-                    window.scrollBy(0, 10);
-                    break;
-            }
-        }
-    };
-
-    section.addEventListener('mousedown', scrollController);
-    section.addEventListener('mouseup', scrollController);
-
-    //////////////////////////
-
-    const header = document.getElementById('tips_header');
-
-    function targetAlert() {
-        alert(" Натиснули на " + event.currentTarget);
-        header.removeEventListener("click", targetAlert);
-    };
-
-    header.addEventListener('click', targetAlert);
-
-    //////////////////////////
-
     class Menu {
         constructor(elem) {
             this._elem = elem;
@@ -678,15 +570,15 @@
         }
         lighting() {
             const element = document.querySelector('.lighting-for-mood');
-            element.scrollIntoView({ behavior: 'smooth', block: 'start' });        
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
         furniture() {
             const element = document.querySelector('.zoning-and-furniture');
-            element.scrollIntoView({ behavior: 'smooth', block: 'start' });        
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
         colourPalettes() {
             const element = document.querySelector('.tips-list>.tips-item');
-            element.scrollIntoView({ behavior: 'smooth', block: 'start' });        
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
         onClick(event) {
             let action = event.target.dataset.action;

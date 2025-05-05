@@ -43,54 +43,6 @@
         </section>
 
         <section class="style-list">
-            <div class="w-container style-descr">
-                <h2>Коротка навігація</h2>
-                <div id="style-buttons">
-                    <button data-behavior="show-style" data-style="loft">Лофт</button>
-                    <button data-behavior="show-style" data-style="minimalism">Мінімалізм</button>
-                    <button data-behavior="show-style" data-style="scandinavian">Скандинавський</button>
-                    <button data-behavior="show-style" data-style="classical">Класичний</button>
-                    <button data-behavior="show-style" data-style="hitech">Хай-тек</button>
-                </div>
-
-                <div id="style-info" class="style-info">
-                    <h3>Оберіть стиль інтер'єру, щоб побачити коротку інформацію!</h3>
-                </div>
-                <style>
-                    #style-buttons {
-                        display: flex;
-                        justify-content: start;
-                        gap: 20px;
-                        margin: 20px 0;
-                    }
-
-                    #style-buttons button {
-                        padding: 10px 20px;
-                        font-size: 16px;
-                        font-weight: bold;
-                        background-color: #567c8d;
-                        color: #fff;
-                        border: none;
-                        border-radius: 5px;
-                        cursor: pointer;
-                        transition: background-color 0.3s, transform 0.3s;
-                    }
-
-                    #style-buttons button:hover {
-                        background-color: #2f4156;
-                        transform: translateY(-3px);
-                    }
-
-                    #style-buttons button:active {
-                        background-color: #567c8d;
-                        transform: translateY(1px);
-                    }
-                </style>
-            </div>
-
-        </section>
-
-        <section class="style-list">
             <div class="style-item w-container">
                 <div class="style-descr">
                     <h2><span class="style-name">Лофт</span>: стиль для сміливих рішень</h2>
@@ -289,6 +241,29 @@
                 </div>
             </div>
         </section>
+        <style>
+            .style-item {
+                transition: transform 0.5s;
+            }
+        
+            .style-item.hovered {
+                transform: scale(1.09);
+                cursor: pointer;
+            }
+        
+            .style-intro div {
+                max-width: 900px;
+                position: absolute;
+                top: 200px;
+                left: 200px;
+                width: 100%;
+                max-width: 70%;
+                min-width: 500px;
+                cursor: grab;
+                transform: none;
+                z-index: 1000;
+            }
+        </style>
     </main>
     <footer>
         <div class="footer-main">
@@ -307,58 +282,51 @@
     </footer>
 </body>
 <script>
-    const list = document.getElementById('list_highlight');
-
-    list.onclick = function (event) {
-        let target = event.target;
-
-        if (!target) return;
-
-        const allItems = list.querySelectorAll('li');
-        allItems.forEach(item => {
-            item.style.textShadow = '';
-        });
-
-        target.style.textShadow = "0px 0px 10px aqua";
-    };
-
-    /////////////////////////
-
-    const styleData = {
-        loft: {
-            name: "Лофт",
-            description: "Лофт — це стиль, який поєднує індустріальні елементи з комфортом житлових приміщень. Це відкриті простори, грубі матеріали та мінімалістичний підхід."
-        },
-        minimalism: {
-            name: "Мінімалізм",
-            description: "Мінімалізм — це стиль, який характеризується простотою та відсутністю зайвих деталей. Це гармонія в простоті."
-        },
-        scandinavian: {
-            name: "Скандинавський стиль",
-            description: "Скандинавський стиль поєднує природні матеріали, світлі кольори та простоту. Це затишок і функціональність в одному."
-        },
-        classical: {
-            name: "Класичний стиль",
-            description: "Класичний стиль відомий своєю елегантністю, симетрією і розкішними елементами. Він підходить для тих, хто любить традиційний декор."
-        },
-        hitech: {
-            name: "Хай-тек",
-            description: "Хай-тек — це стиль, що базується на використанні сучасних матеріалів та технологій. Це мінімалістичні форми та функціональність."
-        }
-    };
-
-    document.addEventListener('click', function (event) {
-        if (event.target.matches('[data-behavior="show-style"]')) {
-            const styleKey = event.target.dataset.style;
-            const style = styleData[styleKey];
-            const styleInfoDiv = document.getElementById('style-info');
-
-            styleInfoDiv.innerHTML = `
-                <h3>${style.name}</h3>
-                <p>${style.description}</p>
-            `;
+    document.querySelector(".style-list").addEventListener("mouseover", function (event) {
+        const item = event.target.closest(".style-item");
+        if (item && !item.contains(event.relatedTarget)) {
+            item.classList.add("hovered");
         }
     });
+
+    document.querySelector(".style-list").addEventListener("mouseout", function (event) {
+        const item = event.target.closest(".style-item");
+        if (item && !item.contains(event.relatedTarget)) {
+            item.classList.remove("hovered");
+        }
+    });
+
+///////////////////////////////////////////////////////////////
+
+    const block = document.querySelector('.style-intro div');
+
+
+    block.onmousedown = function (event) {
+    let shiftX = event.clientX - block.getBoundingClientRect().left;
+    let shiftY = event.clientY - block.getBoundingClientRect().top;
+
+    moveAt(event.pageX, event.pageY);
+
+    function moveAt(pageX, pageY) {
+        block.style.left = pageX - shiftX + 'px';
+        block.style.top = pageY - shiftY + 'px';
+    }
+
+    function onMouseMove(event) {
+        moveAt(event.pageX, event.pageY);
+    }
+
+    document.addEventListener('mousemove', onMouseMove);
+
+    block.onmouseup = function () {
+        document.removeEventListener('mousemove', onMouseMove);
+        block.onmouseup = null;
+    };
+    };
+
+    block.ondragstart = function () {
+    return false;
+    };
 
 </script>
 

@@ -297,27 +297,6 @@
                 </div>
             </div>
         </section>
-        <div class="idea" onclick="idea(this)">
-            <p>Натисніть тут, щоб отримати ідею оформлення!</p>
-        </div>
-        <style>
-            .idea {
-                position: absolute;
-                top: 100px;
-                left: 50px;
-                width: 200px;
-                height: 100px;
-                background-color: yellow;
-                border-radius: 100%;
-                display: flex;
-                align-items: center;
-                padding: 10px;
-                p {
-                    text-align: center;
-                    font-size: 15px;
-                }
-            }
-        </style>
     </main>
     <footer>
         <div class="footer-main">
@@ -336,13 +315,7 @@
     </footer>
 </body>
 <script>
-    function idea(el) {
-        el.innerHTML = "<p>Комбінуйте текстури: дерево, тканини, камінь — це додає глибини інтер'єру.<p>";
-    }
 
-    intro_back.onclick = function () {
-        location.href = "/styles.html";
-    };
 </script>
 
 </html>
