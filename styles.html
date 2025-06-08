@@ -282,17 +282,17 @@
     </footer>
 </body>
 <script>
-    document.querySelector(".style-list").addEventListener("mouseover", function (event) {
-        const item = event.target.closest(".style-item");
+    document.querySelector('.style-list').addEventListener('mouseover', function (event) {
+        const item = event.target.closest('.style-item');
         if (item && !item.contains(event.relatedTarget)) {
-            item.classList.add("hovered");
+            item.classList.add('hovered');
         }
     });
 
-    document.querySelector(".style-list").addEventListener("mouseout", function (event) {
-        const item = event.target.closest(".style-item");
+    document.querySelector('.style-list').addEventListener('mouseout', function (event) {
+        const item = event.target.closest('.style-item');
         if (item && !item.contains(event.relatedTarget)) {
-            item.classList.remove("hovered");
+            item.classList.remove('hovered');
         }
     });
 
@@ -325,7 +325,7 @@
     };
 
     block.ondragstart = function () {
-    return false;
+        return false;
     };
 
 </script>
