@@ -1,0 +1,38 @@
+{
+  "name": "interior_rudykh",
+  "version": "1.0.0",
+  "description": "\"# Interior_RudykhKO\"",
+  "main": "index.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "node app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/karolinarm08/Interior_RudykhKO.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/karolinarm08/Interior_RudykhKO/issues"
+  },
+  "homepage": "https://github.com/karolinarm08/Interior_RudykhKO#readme",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.3.2",
+    "express-validator": "^7.3.2",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.1.1",
+    "mysql2": "^3.20.0",
+    "nodemailer": "^8.0.5",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
+    "sequelize": "^6.37.8",
+    "uuid": "^14.0.0"
+  }
+}

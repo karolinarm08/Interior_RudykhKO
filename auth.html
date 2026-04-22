@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вхід та реєстрація</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="index.html"><img src="./images/logo2.png" alt=""></a>
+            <div>
+                <a href="index.html">Головна</a>
+                <a href="styles.html">Стилі інтер'єру</a>
+                <a href="tips.html">Корисні поради</a>
+                <a href="shop.html">Магазин</a>
+                <a href="contacts.html">Контакти</a>
+            </div>
+            <div id="authNav"></div>
+        </nav>
+    </header>
+
+    <main>
+    <section class="item-back form-page-back">
+        <div class="w-container auth-page">
+            <div class="auth-card auth-single-card">
+                <div class="auth-tabs">
+                    <button type="button" class="auth-tab active" data-tab="register">Реєстрація</button>
+                    <button type="button" class="auth-tab" data-tab="login">Вхід</button>
+                    <button type="button" class="auth-tab" data-tab="forgot">Відновлення пароля</button>
+                </div>
+
+                <div id="registerBlock" class="auth-tab-content active">
+                    <h1>Реєстрація</h1>
+                    <form id="registerForm" class="shop-form">
+                        <label for="registerName">Ім’я</label>
+                        <input type="text" id="registerName" required>
+
+                        <label for="registerEmail">Email</label>
+                        <input type="email" id="registerEmail" required>
+
+                        <label for="registerPassword">Пароль</label>
+                        <input type="password" id="registerPassword" required>
+
+                        <label for="registerConfirmPassword">Підтвердження пароля</label>
+                        <input type="password" id="registerConfirmPassword" required>
+
+                        <button type="submit" class="shop-main-btn">Зареєструватися</button>
+                    </form>
+                </div>
+
+                <div id="loginBlock" class="auth-tab-content">
+                    <h1>Вхід</h1>
+                    <form id="loginForm" class="shop-form">
+                        <label for="loginEmail">Email</label>
+                        <input type="email" id="loginEmail" required>
+
+                        <label for="loginPassword">Пароль</label>
+                        <input type="password" id="loginPassword" required>
+
+                        <button type="submit" class="shop-main-btn">Увійти</button>
+                    </form>
+
+                    <div class="auth-google-wrap">
+                        <a href="/api/auth/google" class="shop-secondary-btn">Увійти через Google</a>
+                    </div>
+                </div>
+
+                <div id="forgotBlock" class="auth-tab-content">
+                    <h1>Відновлення пароля</h1>
+                    <form id="forgotPasswordForm" class="shop-form">
+                        <label for="forgotEmail">Email</label>
+                        <input type="email" id="forgotEmail" required>
+
+                        <button type="submit" class="shop-secondary-btn">Надіслати посилання</button>
+                    </form>
+                </div>
+
+                <div id="authMessage" class="auth-message"></div>
+            </div>
+        </div>
+    </section>
+</main>
+
+    <script src="auth-ui.js"></script>
+    <script src="auth.js"></script>
+</body>
+</html>

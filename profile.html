@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Профіль</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="index.html"><img src="./images/logo2.png" alt=""></a>
+            <div>
+                <a href="index.html">Головна</a>
+                <a href="styles.html">Стилі інтер'єру</a>
+                <a href="tips.html">Корисні поради</a>
+                <a href="shop.html">Магазин</a>
+                <a href="contacts.html">Контакти</a>
+            </div>
+            <div id="authNav"></div>
+        </nav>
+    </header>
+
+    <main>
+    <section class="item-back form-page-back">
+        <div class="w-container profile-layout">
+            <div class="profile-summary-card">
+                <div class="profile-summary-header">
+                    <div>
+                        <p class="profile-badge">Особистий кабінет</p>
+                        <h1>Мій профіль</h1>
+                    </div>
+                </div>
+
+                <div id="profileInfo" class="profile-info-grid"></div>
+            </div>
+
+            <div class="profile-cards-grid">
+                <div class="profile-form-card">
+                    <h2>Оновити профіль</h2>
+                    <form id="profileForm" class="shop-form profile-form">
+                        <label for="profileName">Ім’я</label>
+                        <input type="text" id="profileName" required>
+
+                        <label for="profileEmail">Email</label>
+                        <input type="email" id="profileEmail" required>
+
+                        <button type="submit" class="shop-main-btn">Оновити профіль</button>
+                    </form>
+                </div>
+
+                <div class="profile-form-card">
+                    <h2>Змінити пароль</h2>
+                    <form id="changePasswordForm" class="shop-form profile-form">
+                        <label for="currentPassword">Поточний пароль</label>
+                        <input type="password" id="currentPassword" required>
+
+                        <label for="newPassword">Новий пароль</label>
+                        <input type="password" id="newPassword" required>
+
+                        <label for="confirmNewPassword">Підтвердження нового пароля</label>
+                        <input type="password" id="confirmNewPassword" required>
+
+                        <button type="submit" class="shop-secondary-btn">Змінити пароль</button>
+                    </form>
+                </div>
+            </div>
+
+            <div id="profileMessage" class="auth-message"></div>
+        </div>
+    </section>
+    </main>
+
+    <script src="auth-ui.js"></script>
+    <script src="profile.js"></script>
+</body>
+</html>
