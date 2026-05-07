@@ -1,222 +1,103 @@
-if (!requireAdmin()) {
-  throw new Error('Forbidden');
+function isAdminUser() {
+    const raw = localStorage.getItem('user');
+    if (!raw) return false;
+    try {
+        const user = JSON.parse(raw);
+        return user.role === 'admin';
+    } catch (e) {
+        return false;
+    }
+}
+
+if (!isAdminUser()) {
+    alert('Доступ заборонено!');
+    window.location.href = 'shop.html';
 }
 
 const form = document.getElementById('categoryForm');
-const categoryNameInput = document.getElementById('categoryName');
-const categoryList = document.getElementById('categoryList');
-const title = document.getElementById('categoryFormTitle');
+const categoryListContainer = document.getElementById('categoryList');
 
-let editingCategoryId = null;
+async function loadAdminCategories() {
+    try {
+        const response = await fetch('/api/categories');
+        const categories = await response.json();
 
-async function apiFetch(url, options = {}) {
-  const token = localStorage.getItem('accessToken');
+        if (!categories || categories.length === 0) {
+            categoryListContainer.innerHTML = '<p>Категорій поки немає.</p>';
+            return;
+        }
 
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      ...(options.headers || {}),
-      'Authorization': `Bearer ${token}`
+        categoryListContainer.innerHTML = categories.map(cat => `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #f9f9f9; margin-bottom: 5px; border-radius: 4px; border: 1px solid #ddd;">
+                <span>${cat.name}</span>
+                <button type="button" onclick="deleteCategory(${cat.id})" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Видалити</button>
+            </div>
+        `).join('');
+    } catch (error) {
+        categoryListContainer.innerHTML = `<p>Помилка завантаження: ${error.message}</p>`;
     }
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || data.error || 'Сталася помилка');
-  }
-
-  return data;
 }
 
-async function loadCategories() {
-  const categories = await apiFetch('/api/categories');
+window.deleteCategory = async function(id) {
+    if (!confirm('Видалити цю категорію?')) return;
 
-  categoryList.innerHTML = '';
-
-  if (!categories.length) {
-    categoryList.innerHTML = '<p>Категорій поки немає.</p>';
-    return;
-  }
-
-  categories.forEach(category => {
-    const item = document.createElement('div');
-    item.className = 'category-admin-item';
-
-    item.innerHTML = `
-      <span>${category.name}</span>
-      <div class="category-admin-actions">
-        <button class="shop-secondary-btn small" data-edit="${category.id}" data-name="${category.name}">Редагувати</button>
-        <button class="shop-delete-btn small" data-delete="${category.id}">Видалити</button>
-      </div>
-    `;
-
-    categoryList.appendChild(item);
-  });
-
-  document.querySelectorAll('[data-edit]').forEach(button => {
-    button.addEventListener('click', () => {
-      editingCategoryId = button.dataset.edit;
-      categoryNameInput.value = button.dataset.name;
-      title.textContent = 'Редагувати категорію';
-    });
-  });
-
-  document.querySelectorAll('[data-delete]').forEach(button => {
-    button.addEventListener('click', async () => {
-      if (!confirm('Видалити цю категорію?')) return;
-
-      try {
-        await apiFetch(`/api/categories/${button.dataset.delete}`, {
-          method: 'DELETE'
+    try {
+        const token = localStorage.getItem('accessToken');
+        const response = await fetch(`/api/categories/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
         });
-        await loadCategories();
-      } catch (error) {
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || 'Помилка при видаленні');
+        }
+
+        alert(data.message);
+        loadAdminCategories(); // Оновлюємо список
+    } catch (error) {
         alert(error.message);
-      }
-    });
-  });
-}
+    }
+};
 
 form.addEventListener('submit', async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  try {
-    const name = categoryNameInput.value.trim();
+    const nameInput = document.getElementById('categoryName');
+    const name = nameInput.value.trim();
 
     if (!name) {
-      alert('Введіть назву категорії');
-      return;
+        alert('Введіть назву категорії');
+        return;
     }
 
-    if (editingCategoryId) {
-      await apiFetch(`/api/categories/${editingCategoryId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name })
-      });
-      alert('Категорію оновлено');
-    } else {
-      await apiFetch('/api/categories', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name })
-      });
-      alert('Категорію додано');
-    }
+    try {
+        const token = localStorage.getItem('accessToken');
+        
+        const response = await fetch('/api/categories', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ name })
+        });
 
-    form.reset();
-    editingCategoryId = null;
-    title.textContent = 'Додати категорію';
-    await loadCategories();
-  } catch (error) {
-    alert(error.message);
-  }
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || 'Помилка при додаванні категорії');
+        }
+
+        alert(data.message);
+        nameInput.value = ''; 
+        loadAdminCategories(); 
+    } catch (error) {
+        alert(error.message);
+    }
 });
 
-loadCategories();
-
-// const form = document.getElementById('categoryForm');
-// const categoryNameInput = document.getElementById('categoryName');
-// const categoryList = document.getElementById('categoryList');
-// const title = document.getElementById('categoryFormTitle');
-
-// let editingCategoryId = null;
-
-// async function apiFetch(url, options = {}) {
-//   const response = await fetch(url, options);
-//   const data = await response.json();
-
-//   if (!response.ok) {
-//     throw new Error(data.error || 'Сталася помилка');
-//   }
-
-//   return data;
-// }
-
-// async function loadCategories() {
-//   const categories = await apiFetch('/api/categories');
-
-//   categoryList.innerHTML = '';
-
-//   if (!categories.length) {
-//     categoryList.innerHTML = '<p>Категорій поки немає.</p>';
-//     return;
-//   }
-
-//   categories.forEach(category => {
-//     const item = document.createElement('div');
-//     item.className = 'category-admin-item';
-
-//     item.innerHTML = `
-//       <span>${category.name}</span>
-//       <div class="category-admin-actions">
-//         <button class="shop-secondary-btn small" data-edit="${category.id}" data-name="${category.name}">Редагувати</button>
-//         <button class="shop-delete-btn small" data-delete="${category.id}">Видалити</button>
-//       </div>
-//     `;
-
-//     categoryList.appendChild(item);
-//   });
-
-//   document.querySelectorAll('[data-edit]').forEach(button => {
-//     button.addEventListener('click', () => {
-//       editingCategoryId = button.dataset.edit;
-//       categoryNameInput.value = button.dataset.name;
-//       title.textContent = 'Редагувати категорію';
-//     });
-//   });
-
-//   document.querySelectorAll('[data-delete]').forEach(button => {
-//     button.addEventListener('click', async () => {
-//       if (!confirm('Видалити цю категорію?')) return;
-
-//       try {
-//         await apiFetch(`/api/categories/${button.dataset.delete}`, {
-//           method: 'DELETE'
-//         });
-//         await loadCategories();
-//       } catch (error) {
-//         alert(error.message);
-//       }
-//     });
-//   });
-// }
-
-// form.addEventListener('submit', async (e) => {
-//   e.preventDefault();
-
-//   try {
-//     const name = categoryNameInput.value.trim();
-
-//     if (!name) {
-//       alert('Введіть назву категорії');
-//       return;
-//     }
-
-//     if (editingCategoryId) {
-//       await apiFetch(`/api/categories/${editingCategoryId}`, {
-//         method: 'PUT',
-//         headers: { 'Content-Type': 'application/json' },
-//         body: JSON.stringify({ name })
-//       });
-//       alert('Категорію оновлено');
-//     } else {
-//       await apiFetch('/api/categories', {
-//         method: 'POST',
-//         headers: { 'Content-Type': 'application/json' },
-//         body: JSON.stringify({ name })
-//       });
-//       alert('Категорію додано');
-//     }
-
-//     form.reset();
-//     editingCategoryId = null;
-//     title.textContent = 'Додати категорію';
-//     await loadCategories();
-//   } catch (error) {
-//     alert(error.message);
-//   }
-// });
-
-// loadCategories();
+loadAdminCategories();

@@ -21,27 +21,73 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+const morgan = require('morgan');
+app.use(morgan('combined'));
+
+const winston = require('winston');
+// Ротація логів
+const DailyRotateFile = require('winston-daily-rotate-file');
+
+const logger = winston.createLogger({
+  level: 'info',
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.json()
+  ),
+  transports: [
+    new winston.transports.File({
+      filename: 'app.log',
+      maxsize: 5242880, // Максимальний розмір файлу: 5 МБ (в байтах)
+      maxFiles: 5,      // Зберігати максимум 5 старих файлів
+      tailable: true    // Нові логи завжди писатимуться в app.log
+    }),
+    new winston.transports.Console()
+  ]
+});
+logger.info('Сервер запущено, логер ініціалізовано');
+
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    logger.info(`${req.method} ${req.url} - ${duration}ms`);
+  });
+  next();
+});
+
 /* =========================
    PATHS / UPLOADS
 ========================= */
 
-const uploadsDir = path.join(__dirname, 'uploads');
+const uploadsDir = path.join(__dirname, 'public', 'uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadsDir);
+  destination: function (req, file, cb) {
+    cb(null, 'public/uploads/');
   },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    const safeName = file.originalname.replace(/\s+/g, '-');
-    cb(null, `${uniqueSuffix}-${safeName}`);
+  filename: function (req, file, cb) {
+    const uniqueName = Date.now() + '-' + file.originalname;
+    cb(null, uniqueName);
   }
 });
 
-const upload = multer({ storage });
+const fileFilter = (req, file, cb) => {
+  const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+  if (allowedTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Неправильний формат файлу (дозволено лише jpg, png, pdf)'), false);
+  }
+};
+
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 2 * 1024 * 1024 },
+  fileFilter: fileFilter
+});
 
 /* =========================
    MIDDLEWARE
@@ -54,6 +100,7 @@ app.use(passport.initialize());
 
 app.use(express.static(__dirname));
 app.use('/uploads', express.static(uploadsDir));
+app.use('/uploads', express.static('public/uploads'));
 
 /* =========================
    HELPERS
@@ -1010,23 +1057,23 @@ app.delete(
 
 app.get('/api/products', async (req, res, next) => {
   try {
+    const { category } = req.query;
     const db = await connectDB();
 
-    let sql = `
-      SELECT products.*, categories.name AS category_name
-      FROM products
-      LEFT JOIN categories ON products.category_id = categories.id
+    let query = `
+      SELECT p.*, c.name AS category_name
+      FROM products p
+      LEFT JOIN categories c ON p.category_id = c.id
     `;
+
     const params = [];
 
-    if (req.query.category) {
-      sql += ' WHERE products.category_id = ?';
-      params.push(req.query.category);
+    if (category) {
+      query += ' WHERE p.category_id = ?';
+      params.push(category);
     }
 
-    sql += ' ORDER BY products.id DESC';
-
-    const [rows] = await db.execute(sql, params);
+    const [rows] = await db.execute(query, params);
     await db.end();
 
     res.json(rows);
@@ -1063,56 +1110,28 @@ app.post(
   '/api/products',
   verifyAccessToken,
   allowRoles('admin'),
-  upload.single('image'),
-  [
-    body('name').trim().notEmpty().withMessage('Назва товару обов’язкова'),
-    body('price').notEmpty().withMessage('Ціна є обов’язковою'),
-    body('category_id').notEmpty().withMessage('Категорія є обов’язковою')
-  ],
   async (req, res, next) => {
     try {
-      const validation = sendValidationErrors(req, res);
-      if (validation) return validation;
+      const { name, price, category_id, description, stock_status, images } = req.body;
 
-      const { name, description, price, stock_status, category_id } = req.body;
-
-      const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
+      if (!name || !price || !category_id) {
+        return res.status(400).json({ message: 'Заповніть обовʼязкові поля' });
+      }
 
       const db = await connectDB();
 
-      const [categoryRows] = await db.execute(
-        'SELECT id FROM categories WHERE id = ?',
-        [Number(category_id)]
-      );
+      const imagesJson = Array.isArray(images) && images.length > 0 ? JSON.stringify(images) : null;
 
-      if (!categoryRows.length) {
-        await db.end();
-        return res.status(400).json({
-          message: 'Обрана категорія не існує'
-        });
-      }
-
-      const [result] = await db.execute(
+      await db.execute(
         `
-        INSERT INTO products (name, description, price, stock_status, category_id, image_url)
+        INSERT INTO products (name, price, category_id, description, stock_status, image_url)
         VALUES (?, ?, ?, ?, ?, ?)
         `,
-        [
-          name.trim(),
-          description?.trim() || '',
-          Number(price),
-          stock_status?.trim() || 'В наявності',
-          Number(category_id),
-          imageUrl
-        ]
+        [name, Number(price), category_id, description || null, stock_status || 'В наявності', imagesJson]
       );
 
       await db.end();
-
-      res.status(201).json({
-        message: 'Товар додано',
-        id: result.insertId
-      });
+      res.json({ message: 'Товар створено' });
     } catch (error) {
       next(error);
     }
@@ -1123,54 +1142,25 @@ app.put(
   '/api/products/:id',
   verifyAccessToken,
   allowRoles('admin'),
-  upload.single('image'),
-  [
-    body('name').trim().notEmpty().withMessage('Назва товару обов’язкова'),
-    body('price').notEmpty().withMessage('Ціна є обов’язковою'),
-    body('category_id').notEmpty().withMessage('Категорія є обов’язковою')
-  ],
   async (req, res, next) => {
     try {
-      const validation = sendValidationErrors(req, res);
-      if (validation) return validation;
+      const { id } = req.params;
+      const { name, price, category_id, description, stock_status, images } = req.body;
 
-      const { name, description, price, stock_status, category_id } = req.body;
       const db = await connectDB();
 
-      const [existingRows] = await db.execute(
-        'SELECT * FROM products WHERE id = ?',
-        [req.params.id]
-      );
-
-      if (!existingRows.length) {
-        await db.end();
-        return res.status(404).json({ message: 'Товар не знайдено' });
-      }
-
-      const existingProduct = existingRows[0];
-      const imageUrl = req.file
-        ? `/uploads/${req.file.filename}`
-        : existingProduct.image_url;
+      const imagesJson = Array.isArray(images) && images.length > 0 ? JSON.stringify(images) : null;
 
       await db.execute(
         `
         UPDATE products
-        SET name = ?, description = ?, price = ?, stock_status = ?, category_id = ?, image_url = ?
-        WHERE id = ?
+        SET name=?, price=?, category_id=?, description=?, stock_status=?, image_url=?
+        WHERE id=?
         `,
-        [
-          name.trim(),
-          description?.trim() || '',
-          Number(price),
-          stock_status?.trim() || 'В наявності',
-          Number(category_id),
-          imageUrl,
-          Number(req.params.id)
-        ]
+        [name, Number(price), category_id, description, stock_status, imagesJson, id]
       );
 
       await db.end();
-
       res.json({ message: 'Товар оновлено' });
     } catch (error) {
       next(error);
@@ -1215,9 +1205,75 @@ app.delete(
   }
 );
 
+// Ендпоінт для завантаження одного файлу
+app.post('/upload', upload.single('file'), (req, res) => {
+  logger.info('Один файл успішно завантажено: ' + req.file.filename);
+  res.json({
+    message: 'Один файл успішно завантажено',
+    file: req.file
+  });
+});
+
+// Ендпоінт для завантаження кількох файлів
+app.post('/upload-multiple', upload.array('files', 5), (req, res) => {
+  const fileNames = req.files.map(f => f.filename).join(', ');
+
+  logger.info('Успішно завантажено файли: ' + fileNames);
+
+  res.json({
+    message: 'Файли успішно завантажено',
+    files: req.files
+  });
+});
+
+app.get('/status', (req, res) => {
+  const memoryUsage = process.memoryUsage();
+  const uptime = process.uptime();
+  res.json({
+    uptime: uptime,
+    memoryUsage: memoryUsage
+  });
+});
+
+// API для перегляду логів
+app.get('/api/logs', (req, res) => {
+  // Читаємо стандартний файл логів
+  fs.readFile('app.log', 'utf8', (err, data) => {
+    if (err) return res.status(500).json({ error: 'Логи не знайдені' });
+    // Розбиваємо рядки і віддаємо як масив JSON
+    const logs = data.trim().split('\n').map(line => JSON.parse(line));
+    res.json(logs);
+  });
+});
+
+// панель моніторингу
+app.get('/dashboard', (req, res) => {
+  res.send(`
+        <html>
+            <head><title>Моніторинг</title></head>
+            <body style="font-family: Arial; padding: 20px;">
+                <h1>Панель моніторингу сервера</h1>
+                <div id="stats">Завантаження...</div>
+                <script>
+                    setInterval(() => {
+                        fetch('/status')
+                            .then(r => r.json())
+                            .then(data => {
+                                document.getElementById('stats').innerHTML = 
+                                    '<p><b>Uptime:</b> ' + data.uptime.toFixed(2) + ' сек</p>' +
+                                    '<p><b>Пам\\'ять (Heap Used):</b> ' + (data.memoryUsage.heapUsed / 1024 / 1024).toFixed(2) + ' MB</p>';
+                            });
+                    }, 2000); // Оновлення кожні 2 секунди
+                </script>
+            </body>
+        </html>
+    `);
+});
+
 /* =========================
    404
 ========================= */
+
 
 app.use((req, res) => {
   res.status(404).json({
@@ -1231,6 +1287,14 @@ app.use((req, res) => {
 
 app.use(errorHandler);
 
+app.use((err, req, res, next) => {
+  logger.error(`Помилка: ${err.message}`);
+  res.status(500).json({
+    error: "Сталася помилка на сервері",
+    details: err.message
+  });
+});
+
 /* =========================
    START
 ========================= */
@@ -1239,322 +1303,3 @@ app.listen(PORT, () => {
   console.log(`Сервер запущено: http://localhost:${PORT}`);
 });
 
-// const express = require('express');
-// const connectDB = require('./db');
-// const path = require('path');
-// const fs = require('fs');
-// const multer = require('multer');
-
-// const app = express();
-// const PORT = 3000;
-
-// const uploadsDir = path.join(__dirname, 'uploads');
-// if (!fs.existsSync(uploadsDir)) {
-//   fs.mkdirSync(uploadsDir);
-// }
-
-// const storage = multer.diskStorage({
-//   destination: (req, file, cb) => {
-//     cb(null, uploadsDir);
-//   },
-//   filename: (req, file, cb) => {
-//     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-//     const safeName = file.originalname.replace(/\s+/g, '-');
-//     cb(null, `${uniqueSuffix}-${safeName}`);
-//   }
-// });
-
-// const upload = multer({ storage });
-
-// app.use(express.json());
-// app.use(express.urlencoded({ extended: true }));
-// app.use(express.static(__dirname));
-// app.use('/uploads', express.static(uploadsDir));
-
-// app.get('/', (req, res) => {
-//   res.sendFile(path.join(__dirname, 'index.html'));
-// });
-
-// /* =========================
-//    CATEGORIES
-// ========================= */
-
-// app.get('/api/categories', async (req, res) => {
-//   try {
-//     const db = await connectDB();
-//     const [rows] = await db.execute('SELECT * FROM categories ORDER BY name');
-//     await db.end();
-//     res.json(rows);
-//   } catch (error) {
-//     res.status(500).json({ error: error.message });
-//   }
-// });
-
-// app.get('/api/categories/:id', async (req, res) => {
-//   try {
-//     const db = await connectDB();
-//     const [rows] = await db.execute(
-//       'SELECT * FROM categories WHERE id = ?',
-//       [req.params.id]
-//     );
-//     await db.end();
-
-//     if (!rows.length) {
-//       return res.status(404).json({ error: 'Категорію не знайдено' });
-//     }
-
-//     res.json(rows[0]);
-//   } catch (error) {
-//     res.status(500).json({ error: error.message });
-//   }
-// });
-
-// app.post('/api/categories', async (req, res) => {
-//   try {
-//     const { name } = req.body;
-
-//     if (!name || !name.trim()) {
-//       return res.status(400).json({ error: 'Назва категорії обов’язкова' });
-//     }
-
-//     const db = await connectDB();
-//     const [result] = await db.execute(
-//       'INSERT INTO categories (name) VALUES (?)',
-//       [name.trim()]
-//     );
-//     await db.end();
-
-//     res.json({
-//       message: 'Категорію додано',
-//       id: result.insertId
-//     });
-//   } catch (error) {
-//     res.status(500).json({ error: error.message });
-//   }
-// });
-
-// app.put('/api/categories/:id', async (req, res) => {
-//   try {
-//     const { name } = req.body;
-
-//     if (!name || !name.trim()) {
-//       return res.status(400).json({ error: 'Назва категорії обов’язкова' });
-//     }
-
-//     const db = await connectDB();
-//     await db.execute(
-//       'UPDATE categories SET name = ? WHERE id = ?',
-//       [name.trim(), req.params.id]
-//     );
-//     await db.end();
-
-//     res.json({ message: 'Категорію оновлено' });
-//   } catch (error) {
-//     res.status(500).json({ error: error.message });
-//   }
-// });
-
-// app.delete('/api/categories/:id', async (req, res) => {
-//   try {
-//     const db = await connectDB();
-
-//     const [products] = await db.execute(
-//       'SELECT id FROM products WHERE category_id = ? LIMIT 1',
-//       [req.params.id]
-//     );
-
-//     if (products.length) {
-//       await db.end();
-//       return res.status(400).json({
-//         error: 'Категорію не можна видалити, бо в ній є товари'
-//       });
-//     }
-
-//     await db.execute('DELETE FROM categories WHERE id = ?', [req.params.id]);
-//     await db.end();
-
-//     res.json({ message: 'Категорію видалено' });
-//   } catch (error) {
-//     res.status(500).json({ error: error.message });
-//   }
-// });
-
-// /* =========================
-//    PRODUCTS
-// ========================= */
-
-// app.get('/api/products', async (req, res) => {
-//   try {
-//     const db = await connectDB();
-
-//     let sql = `
-//       SELECT products.*, categories.name AS category_name
-//       FROM products
-//       LEFT JOIN categories ON products.category_id = categories.id
-//     `;
-//     const params = [];
-
-//     if (req.query.category) {
-//       sql += ' WHERE products.category_id = ?';
-//       params.push(req.query.category);
-//     }
-
-//     sql += ' ORDER BY products.id DESC';
-
-//     const [rows] = await db.execute(sql, params);
-//     await db.end();
-
-//     res.json(rows);
-//   } catch (error) {
-//     res.status(500).json({ error: error.message });
-//   }
-// });
-
-// app.get('/api/products/:id', async (req, res) => {
-//   try {
-//     const db = await connectDB();
-//     const [rows] = await db.execute(
-//       `
-//       SELECT products.*, categories.name AS category_name
-//       FROM products
-//       LEFT JOIN categories ON products.category_id = categories.id
-//       WHERE products.id = ?
-//       `,
-//       [req.params.id]
-//     );
-//     await db.end();
-
-//     if (!rows.length) {
-//       return res.status(404).json({ error: 'Товар не знайдено' });
-//     }
-
-//     res.json(rows[0]);
-//   } catch (error) {
-//     res.status(500).json({ error: error.message });
-//   }
-// });
-
-// app.post('/api/products', upload.single('image'), async (req, res) => {
-//   try {
-//     const { name, description, price, stock_status, category_id } = req.body;
-
-//     if (!name || !price || !category_id) {
-//       return res.status(400).json({
-//         error: 'Поля name, price, category_id є обов’язковими'
-//       });
-//     }
-
-//     const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
-
-//     const db = await connectDB();
-//     const [result] = await db.execute(
-//       `
-//       INSERT INTO products (name, description, price, stock_status, category_id, image_url)
-//       VALUES (?, ?, ?, ?, ?, ?)
-//       `,
-//       [
-//         name.trim(),
-//         description?.trim() || '',
-//         Number(price),
-//         stock_status?.trim() || 'В наявності',
-//         Number(category_id),
-//         imageUrl
-//       ]
-//     );
-//     await db.end();
-
-//     res.json({
-//       message: 'Товар додано',
-//       id: result.insertId
-//     });
-//   } catch (error) {
-//     res.status(500).json({ error: error.message });
-//   }
-// });
-
-// app.put('/api/products/:id', upload.single('image'), async (req, res) => {
-//   try {
-//     const { name, description, price, stock_status, category_id } = req.body;
-
-//     if (!name || !price || !category_id) {
-//       return res.status(400).json({
-//         error: 'Поля name, price, category_id є обов’язковими'
-//       });
-//     }
-
-//     const db = await connectDB();
-
-//     const [existingRows] = await db.execute(
-//       'SELECT * FROM products WHERE id = ?',
-//       [req.params.id]
-//     );
-
-//     if (!existingRows.length) {
-//       await db.end();
-//       return res.status(404).json({ error: 'Товар не знайдено' });
-//     }
-
-//     const existingProduct = existingRows[0];
-//     const imageUrl = req.file
-//       ? `/uploads/${req.file.filename}`
-//       : existingProduct.image_url;
-
-//     await db.execute(
-//       `
-//       UPDATE products
-//       SET name = ?, description = ?, price = ?, stock_status = ?, category_id = ?, image_url = ?
-//       WHERE id = ?
-//       `,
-//       [
-//         name.trim(),
-//         description?.trim() || '',
-//         Number(price),
-//         stock_status?.trim() || 'В наявності',
-//         Number(category_id),
-//         imageUrl,
-//         Number(req.params.id)
-//       ]
-//     );
-
-//     await db.end();
-//     res.json({ message: 'Товар оновлено' });
-//   } catch (error) {
-//     res.status(500).json({ error: error.message });
-//   }
-// });
-
-// app.delete('/api/products/:id', async (req, res) => {
-//   try {
-//     const db = await connectDB();
-
-//     const [rows] = await db.execute(
-//       'SELECT image_url FROM products WHERE id = ?',
-//       [req.params.id]
-//     );
-
-//     if (!rows.length) {
-//       await db.end();
-//       return res.status(404).json({ error: 'Товар не знайдено' });
-//     }
-
-//     const imageUrl = rows[0].image_url;
-
-//     await db.execute('DELETE FROM products WHERE id = ?', [req.params.id]);
-//     await db.end();
-
-//     if (imageUrl) {
-//       const absolutePath = path.join(__dirname, imageUrl.replace(/^\//, ''));
-//       if (fs.existsSync(absolutePath)) {
-//         fs.unlinkSync(absolutePath);
-//       }
-//     }
-
-//     res.json({ message: 'Товар видалено' });
-//   } catch (error) {
-//     res.status(500).json({ error: error.message });
-//   }
-// });
-
-// app.listen(PORT, () => {
-//   console.log(`Сервер запущено: http://localhost:${PORT}`);
-// });
