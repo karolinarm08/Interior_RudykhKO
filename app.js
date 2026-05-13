@@ -3,14 +3,19 @@ const connectDB = require('./db');
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const dotenv = require('dotenv');
-const rateLimit = require('express-rate-limit');
-const { body, validationResult } = require('express-validator');
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
+
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const { body, validationResult } = require('express-validator');
+const NodeCache = require('node-cache');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+const swaggerUi = require('swagger-ui-express');
+const swaggerJsdoc = require('swagger-jsdoc');
 
 const { verifyAccessToken, allowRoles } = require('./middleware/authMiddleware');
 const errorHandler = require('./middleware/errorHandler');
@@ -19,6 +24,7 @@ const { passport, googleEnabled } = require('./config/passport');
 dotenv.config();
 
 const app = express();
+const cache = new NodeCache({ stdTTL: 60 });
 const PORT = process.env.PORT || 3000;
 
 const morgan = require('morgan');
@@ -94,6 +100,14 @@ const upload = multer({
 ========================= */
 
 app.use(express.json());
+
+app.use(helmet());
+const limiter = rateLimit({
+    windowMs: 1 * 60 * 1000,
+    max: 1000
+});
+app.use('/api', limiter);
+
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(passport.initialize());
@@ -206,6 +220,15 @@ app.get('/', (req, res) => {
    AUTH
 ========================= */
 
+/**
+ * @swagger
+ * /api/auth/register:
+ *   post:
+ *     summary: Реєстрація користувача
+ *     responses:
+ *       200:
+ *         description: Успішна реєстрація
+ */
 app.post(
   '/api/auth/register',
   [
@@ -337,6 +360,15 @@ app.get('/api/auth/verify-email/:token', async (req, res, next) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     summary: Вхід користувача
+ *     responses:
+ *       200:
+ *         description: Успішний вхід
+ */
 app.post(
   '/api/auth/login',
   loginLimiter,
@@ -831,6 +863,15 @@ app.patch(
    ADMIN USERS
 ========================= */
 
+/**
+ * @swagger
+ * /api/admin/users:
+ *   get:
+ *     summary: Отримати список користувачів (для адміністраторів)
+ *     responses:
+ *       200:
+ *         description: Список користувачів
+ */
 app.get(
   '/api/admin/users',
   verifyAccessToken,
@@ -906,6 +947,15 @@ app.delete(
    CATEGORIES
 ========================= */
 
+/**
+ * @swagger
+ * /api/categories:
+ *   get:
+ *     summary: Отримати список категорій
+ *     responses:
+ *       200:
+ *         description: Список категорій
+ */
 app.get('/api/categories', async (req, res, next) => {
   try {
     const db = await connectDB();
@@ -1055,9 +1105,33 @@ app.delete(
    PRODUCTS
 ========================= */
 
+/**
+ * @swagger
+ * /api/products:
+ *   get:
+ *     summary: Отримати список товарів
+ *     responses:
+ *       200:
+ *         description: Список товарів успішно отримано
+ */
 app.get('/api/products', async (req, res, next) => {
   try {
-    const { category } = req.query;
+    const {
+      category,
+      page = 1,
+      limit = 10
+    } = req.query;
+
+    const cacheKey = category
+      ? `products_category_${category}`
+      : 'all_products';
+
+    const cachedProducts = cache.get(cacheKey);
+
+if (cachedProducts) {
+  return res.json(cachedProducts);
+}
+
     const db = await connectDB();
 
     let query = `
@@ -1066,17 +1140,27 @@ app.get('/api/products', async (req, res, next) => {
       LEFT JOIN categories c ON p.category_id = c.id
     `;
 
-    const params = [];
+    let params = [];
 
     if (category) {
       query += ' WHERE p.category_id = ?';
       params.push(category);
     }
 
+    const pageNumber = Number(page);
+    const limitNumber = Number(limit);
+    const offset = (pageNumber - 1) * limitNumber;
+
+    query += ` LIMIT ${limitNumber} OFFSET ${offset}`;
+
     const [rows] = await db.execute(query, params);
+
     await db.end();
 
-    res.json(rows);
+    cache.set(cacheKey, rows);
+
+res.json(rows);
+
   } catch (error) {
     next(error);
   }
@@ -1130,6 +1214,7 @@ app.post(
         [name, Number(price), category_id, description || null, stock_status || 'В наявності', imagesJson]
       );
 
+      cache.flushAll();
       await db.end();
       res.json({ message: 'Товар створено' });
     } catch (error) {
@@ -1160,6 +1245,7 @@ app.put(
         [name, Number(price), category_id, description, stock_status, imagesJson, id]
       );
 
+      cache.flushAll();
       await db.end();
       res.json({ message: 'Товар оновлено' });
     } catch (error) {
@@ -1189,6 +1275,8 @@ app.delete(
       const imageUrl = rows[0].image_url;
 
       await db.execute('DELETE FROM products WHERE id = ?', [req.params.id]);
+
+      cache.flushAll();
       await db.end();
 
       if (imageUrl) {
@@ -1270,6 +1358,37 @@ app.get('/dashboard', (req, res) => {
     `);
 });
 
+
+/* =========================
+   SWAGGER
+========================= */
+
+const swaggerOptions = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'Interior API',
+      version: '1.0.0',
+      description: 'API для магазину інтерєру'
+    },
+    servers: [
+      {
+        url: `http://localhost:${PORT}`
+      }
+    ]
+  },
+  apis: ['./app.js']
+};
+
+const swaggerDocs = swaggerJsdoc(swaggerOptions);
+
+app.use(
+  '/api-docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerDocs)
+);
+
+
 /* =========================
    404
 ========================= */
@@ -1299,7 +1418,11 @@ app.use((err, req, res, next) => {
    START
 ========================= */
 
-app.listen(PORT, () => {
-  console.log(`Сервер запущено: http://localhost:${PORT}`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    console.log(`Сервер запущено: http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;
 
