@@ -1687,8 +1687,12 @@ const swaggerOptions = {
     },
     servers: [
       {
+        url: 'https://interior-rudykhko.onrender.com',
+        description: 'Продакшн сервер (Render)'
+      },
+      {
         url: `http://localhost:${PORT}`,
-        description: 'Локальний сервер'
+        description: 'Локальний сервер (Localhost)'
       }
     ],
     // Додаємо конфігурацію для Bearer JWT авторизації
