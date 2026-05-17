@@ -103,8 +103,8 @@ app.use(express.json());
 
 app.use(helmet());
 const limiter = rateLimit({
-    windowMs: 1 * 60 * 1000,
-    max: 1000
+  windowMs: 1 * 60 * 1000,
+  max: 1000
 });
 app.use('/api', limiter);
 
@@ -224,10 +224,33 @@ app.get('/', (req, res) => {
  * @swagger
  * /api/auth/register:
  *   post:
- *     summary: Реєстрація користувача
+ *     summary: Реєстрація нового користувача
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, email, password, confirmPassword]
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: "Name"
+ *               email:
+ *                 type: string
+ *                 example: "UserName@example.com"
+ *               password:
+ *                 type: string
+ *                 example: "StrongPass123!"
+ *               confirmPassword:
+ *                 type: string
+ *                 example: "StrongPass123!"
  *     responses:
- *       200:
- *         description: Успішна реєстрація
+ *       201:
+ *         description: Користувача успішно зареєстровано
+ *       400:
+ *         description: Помилка валідації або email вже існує
  */
 app.post(
   '/api/auth/register',
@@ -364,10 +387,29 @@ app.get('/api/auth/verify-email/:token', async (req, res, next) => {
  * @swagger
  * /api/auth/login:
  *   post:
- *     summary: Вхід користувача
+ *     summary: Вхід користувача в систему
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, password]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: "UserName@example.com"
+ *               password:
+ *                 type: string
+ *                 example: "StrongPass123!"
  *     responses:
  *       200:
- *         description: Успішний вхід
+ *         description: Успішний вхід, повертає токени
+ *       400:
+ *         description: Невірний email або пароль
+ *       403:
+ *         description: Email не підтверджено
  */
 app.post(
   '/api/auth/login',
@@ -868,9 +910,53 @@ app.patch(
  * /api/admin/users:
  *   get:
  *     summary: Отримати список користувачів (для адміністраторів)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Список користувачів
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                   name:
+ *                     type: string
+ *                   email:
+ *                     type: string
+ *                   role:
+ *                     type: string
+ *                   is_email_confirmed:
+ *                     type: boolean
+ *                   created_at:
+ *                     type: string
+ *                   updated_at:
+ *                     type: string
+ *       401:
+ *         description: Неавторизований - потрібен токен
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Немає токена доступу"
+ *       403:
+ *         description: Недостатньо прав - потрібна роль admin
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Недостатньо прав"
  */
 app.get(
   '/api/admin/users',
@@ -950,11 +1036,31 @@ app.delete(
 /**
  * @swagger
  * /api/categories:
- *   get:
- *     summary: Отримати список категорій
+ *   post:
+ *     summary: Створити нову категорію (Лише для Адміна)
+ *     tags: [Categories]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name]
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: "Освітлення"
  *     responses:
- *       200:
- *         description: Список категорій
+ *       201:
+ *         description: Категорію успішно створено
+ *       400:
+ *         description: Категорія з такою назвою вже існує
+ *       401:
+ *         description: Неавторизований запит
+ *       403:
+ *         description: Недостатньо прав (не адмін)
  */
 app.get('/api/categories', async (req, res, next) => {
   try {
@@ -967,6 +1073,25 @@ app.get('/api/categories', async (req, res, next) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/categories/{id}:
+ *   get:
+ *     summary: Отримати категорію за ID
+ *     tags: [Categories]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID категорії
+ *     responses:
+ *       200:
+ *         description: Дані категорії
+ *       404:
+ *         description: Категорію не знайдено
+ */
 app.get('/api/categories/:id', async (req, res, next) => {
   try {
     const db = await connectDB();
@@ -1028,6 +1153,38 @@ app.post(
   }
 );
 
+/**
+ * @swagger
+ * /api/categories/{id}:
+ *   put:
+ *     summary: Оновити категорію (Лише для Адміна)
+ *     tags: [Categories]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID категорії
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name]
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: "Нова назва"
+ *     responses:
+ *       200:
+ *         description: Категорію оновлено
+ *       404:
+ *         description: Категорію не знайдено
+ */
 app.put(
   '/api/categories/:id',
   verifyAccessToken,
@@ -1069,6 +1226,29 @@ app.put(
   }
 );
 
+/**
+ * @swagger
+ * /api/categories/{id}:
+ *   delete:
+ *     summary: Видалити категорію за ID (Лише для Адміна)
+ *     tags: [Categories]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID категорії
+ *     responses:
+ *       200:
+ *         description: Категорію видалено
+ *       400:
+ *         description: Категорія містить товари
+ *       404:
+ *         description: Категорію не знайдено
+ */
 app.delete(
   '/api/categories/:id',
   verifyAccessToken,
@@ -1109,10 +1289,29 @@ app.delete(
  * @swagger
  * /api/products:
  *   get:
- *     summary: Отримати список товарів
+ *     summary: Отримати список товарів (з пагінацією та фільтрацією)
+ *     tags: [Products]
+ *     parameters:
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: integer
+ *         description: Фільтр за ID категорії
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Номер сторінки
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Кількість товарів на сторінці
  *     responses:
  *       200:
- *         description: Список товарів успішно отримано
+ *         description: Список товарів
  */
 app.get('/api/products', async (req, res, next) => {
   try {
@@ -1128,9 +1327,9 @@ app.get('/api/products', async (req, res, next) => {
 
     const cachedProducts = cache.get(cacheKey);
 
-if (cachedProducts) {
-  return res.json(cachedProducts);
-}
+    if (cachedProducts) {
+      return res.json(cachedProducts);
+    }
 
     const db = await connectDB();
 
@@ -1159,13 +1358,32 @@ if (cachedProducts) {
 
     cache.set(cacheKey, rows);
 
-res.json(rows);
+    res.json(rows);
 
   } catch (error) {
     next(error);
   }
 });
 
+/**
+ * @swagger
+ * /api/products/{id}:
+ *   get:
+ *     summary: Отримати товар за ID
+ *     tags: [Products]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID товару
+ *     responses:
+ *       200:
+ *         description: Дані товару
+ *       404:
+ *         description: Товар не знайдено
+ */
 app.get('/api/products/:id', async (req, res, next) => {
   try {
     const db = await connectDB();
@@ -1190,6 +1408,43 @@ app.get('/api/products/:id', async (req, res, next) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/products:
+ *   post:
+ *     summary: Додати новий товар (Лише для Адміна)
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, price, category_id]
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: "Стильне крісло"
+ *               price:
+ *                 type: number
+ *                 example: 3500
+ *               category_id:
+ *                 type: integer
+ *                 example: 1
+ *               description:
+ *                 type: string
+ *                 example: "М'яке крісло у скандинавському стилі"
+ *               stock_status:
+ *                 type: string
+ *                 example: "В наявності"
+ *     responses:
+ *       200:
+ *         description: Товар успішно створено
+ *       400:
+ *         description: Заповнені не всі обов'язкові поля
+ */
 app.post(
   '/api/products',
   verifyAccessToken,
@@ -1223,6 +1478,44 @@ app.post(
   }
 );
 
+/**
+ * @swagger
+ * /api/products/{id}:
+ *   put:
+ *     summary: Оновити товар (Лише для Адміна)
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID товару
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               price:
+ *                 type: number
+ *               category_id:
+ *                 type: integer
+ *               description:
+ *                 type: string
+ *               stock_status:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Товар оновлено
+ *       404:
+ *         description: Товар не знайдено
+ */
 app.put(
   '/api/products/:id',
   verifyAccessToken,
@@ -1254,6 +1547,27 @@ app.put(
   }
 );
 
+/**
+ * @swagger
+ * /api/products/{id}:
+ *   delete:
+ *     summary: Видалити товар (Лише для Адміна)
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID товару
+ *     responses:
+ *       200:
+ *         description: Товар видалено
+ *       404:
+ *         description: Товар не знайдено
+ */
 app.delete(
   '/api/products/:id',
   verifyAccessToken,
@@ -1369,13 +1683,25 @@ const swaggerOptions = {
     info: {
       title: 'Interior API',
       version: '1.0.0',
-      description: 'API для магазину інтерєру'
+      description: 'Документація REST API для інтернет-магазину інтер’єру'
     },
     servers: [
       {
-        url: `http://localhost:${PORT}`
+        url: `http://localhost:${PORT}`,
+        description: 'Локальний сервер'
       }
-    ]
+    ],
+    // Додаємо конфігурацію для Bearer JWT авторизації
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          description: 'Введіть JWT-токен доступу (AccessToken), отриманий при логіні'
+        }
+      }
+    }
   },
   apis: ['./app.js']
 };
